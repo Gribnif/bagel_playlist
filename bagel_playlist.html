@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>BAGeL Radio Playlist</title>
+  <style>
+    body {
+      font-family: "Droid sans", "Lucida Grande", sans-serif;
+      color: #eee;
+      background: black;
+    }
+    td {
+      padding: 8px;
+    }
+    .title, .time, .day {
+      font-size: smaller;
+      color: #bbb;
+    }
+    .time, .day {
+      text-align: right;
+    }
+  </style>
+  <script src="https://code.jquery.com/jquery-3.6.1.min.js" integrity="sha256-o88AwQnZB+VDvE9tvIXrMQaPlFFSUTR+nldQm1LuPXQ=" crossorigin="anonymous"></script>
+  <script>
+    let lastID = -1;
+    const get = function() {
+      $.getJSON('https://onlineradiobox.com/json/us/bagel/playlist/0?tz=' + (new Date()).getTimezoneOffset() + '&rnd=' + Math.random(), function(json) {
+        if (json.currentTrackId !== lastID) {
+          lastID = json.currentTrackId;
+          let table = $('body').empty().append('<table></table>');
+          let lastDay = '';
+          for (let i = 0; i < json.playlist.length; i++) {
+            const date = new Date(json.playlist[i].created * 1000);
+            const day = new Intl.DateTimeFormat('en-US', {weekday: 'short'}).format(date);
+            const [artist, title] = json.playlist[i].name.split(' - ', 2);
+            const song = '<div class="artist">' + artist + '</div><div class="title">' + title + '</div>';
+            let t = '<div class="time">' + date.toLocaleTimeString('en-US').replace(/(^\d+:\d+):\d+/, '$1') + '</div>';
+            if (day !== lastDay) {
+              t += '<div class="day">' + day + '</div>';
+              lastDay = day;
+            }
+            table.append('<tr><td>' + t + '</td><td></td><td class="song">' + song + '</td></tr>');
+          }
+        }
+      });
+    };
+    get();
+    setInterval(get, 5000);
+  </script>
+</head>
+<body>
+</body>
+</html>
