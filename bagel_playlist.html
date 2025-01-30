@@ -26,23 +26,31 @@
   <script src="https://code.jquery.com/jquery-3.6.1.min.js" integrity="sha256-o88AwQnZB+VDvE9tvIXrMQaPlFFSUTR+nldQm1LuPXQ=" crossorigin="anonymous"></script>
   <script>
     let lastID = -1;
+    let lastDay = '';
     const get = function() {
-      $.getJSON('https://onlineradiobox.com/json/us/bagel/playlist/0?tz=' + (new Date()).getTimezoneOffset() + '&rnd=' + Math.random(), function(json) {
-        if (json.currentTrackId !== lastID) {
-          lastID = json.currentTrackId;
-          let table = $('body').empty().append('<table></table>');
-          let lastDay = '';
-          for (let i = 0; i < json.playlist.length; i++) {
-            const date = new Date(json.playlist[i].created * 1000);
-            const day = new Intl.DateTimeFormat('en-US', {weekday: 'short'}).format(date);
-            const [artist, title] = json.playlist[i].name.split(' - ', 2);
-            const song = '<div class="artist">' + artist + '</div><div class="title">' + title + '</div>';
-            let t = '<div class="time">' + date.toLocaleTimeString('en-US').replace(/(^\d+:\d+):\d+/, '$1') + '</div>';
-            if (day !== lastDay) {
-              t += '<div class="day">' + day + '</div>';
-              lastDay = day;
+      $.getJSON('http://ingest2.cdnstream1.com:10000/ice_history.php?h=ingest2.cdnstream1.com&p=8000&i=2606_128.aac&https=0&f=ice&c=3999&rnd=' + Math.random(), function(json) {
+        // Skip anything more than 5 min. into the future.
+        let j, now = Date.now();
+        for (j = 0; j < json.length; j++) {
+          if (json[j].time < now + 5 * 60 * 1000) {
+            break;
+          }
+        }
+        if (j < json.length && json[j].time !== lastID) {
+          let table = $('body table');
+          for (let i = json.length; --i >= j;) {
+            if (json[i].time > lastID) {
+              lastID = json[i].time;
+              const date = new Date(json[i].time);
+              const day = new Intl.DateTimeFormat('en-US', {weekday: 'short'}).format(date);
+              const song = '<div class="artist">' + json[i].artist + '</div><div class="title">' + json[i].title + '</div>';
+              let t = '<div class="time">' + date.toLocaleTimeString('en-US').replace(/(^\d+:\d+):\d+/, '$1') + '</div>';
+              if (day !== lastDay) {
+                t += '<div class="day">' + day + '</div>';
+                lastDay = day;
+              }
+              table.prepend('<tr><td>' + t + '</td><td></td><td class="song">' + song + '</td></tr>');
             }
-            table.append('<tr><td>' + t + '</td><td></td><td class="song">' + song + '</td></tr>');
           }
         }
       });
@@ -52,5 +60,6 @@
   </script>
 </head>
 <body>
+<table></table>
 </body>
 </html>
